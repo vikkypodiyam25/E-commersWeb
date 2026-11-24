@@ -30,6 +30,12 @@ const ADMIN_USER = process.env.ADMIN_USER || 'admin';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || (process.env.NODE_ENV === 'production' ? '' : 'Dantewada@123');
 const MONGODB_URI = process.env.MONGODB_URI || '';
 const MONGODB_DB = process.env.MONGODB_DB || 'my_shop_vip';
+function isLocalMongoUri(uri) {
+  try {
+    const hostname = new URL(uri).hostname.replace(/^\[|\]$/g, '').toLowerCase();
+    return hostname === 'localhost' || hostname === '::1' || hostname === '0.0.0.0' || /^127(?:\.\d{1,3}){3}$/.test(hostname);
+  } catch { return false; }
+}
 const PAYMENT_QR_IMAGE = process.env.PAYMENT_QR_IMAGE || '/payment-qr.png';
 const UPI_ID = process.env.UPI_ID || '';
 const SHOP_NAME = process.env.SHOP_NAME || 'My Shop VIP';
@@ -291,6 +297,10 @@ async function startServer() {
   }
   if (process.env.NODE_ENV === 'production' && !MONGODB_URI) {
     console.error('Set MONGODB_URI before starting the production server so orders are stored persistently.');
+    process.exit(1);
+  }
+  if (process.env.NODE_ENV === 'production' && isLocalMongoUri(MONGODB_URI)) {
+    console.error('MONGODB_URI points to localhost, which is inside the Render container. Set it to your MongoDB Atlas connection string in the Render Environment settings, then redeploy.');
     process.exit(1);
   }
   if (mongoClient) {
