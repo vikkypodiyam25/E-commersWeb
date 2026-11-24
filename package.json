@@ -4,7 +4,7 @@
   "private": true,
   "description": "A small local storefront with a SQLite cart and checkout backend.",
   "scripts": {
-    "start": "node scripts/run-local.js",
+    "start": "node --disable-warning=ExperimentalWarning backend/server.js",
     "dev": "node scripts/run-local.js",
     "backend": "node --disable-warning=ExperimentalWarning backend/server.js",
     "backend:dev": "node --watch --disable-warning=ExperimentalWarning backend/server.js",

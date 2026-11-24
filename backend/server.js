@@ -27,7 +27,7 @@ const FRONTEND_PORT = Number(process.env.FRONTEND_PORT) || 5173;
 const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || `http://localhost:${FRONTEND_PORT}`;
 const DB_PATH = path.resolve(PROJECT_ROOT, process.env.DB_PATH || 'data/shop.sqlite');
 const ADMIN_USER = process.env.ADMIN_USER || 'admin';
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'Dantewada@123';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || (process.env.NODE_ENV === 'production' ? '' : 'Dantewada@123');
 const MONGODB_URI = process.env.MONGODB_URI || '';
 const MONGODB_DB = process.env.MONGODB_DB || 'my_shop_vip';
 const PAYMENT_QR_IMAGE = process.env.PAYMENT_QR_IMAGE || '/payment-qr.png';
@@ -285,9 +285,20 @@ const server = http.createServer(async (req, res) => {
   }
 });
 async function startServer() {
+  if (process.env.NODE_ENV === 'production' && !ADMIN_PASSWORD) {
+    console.error('Set ADMIN_PASSWORD before starting the production server.');
+    process.exit(1);
+  }
+  if (process.env.NODE_ENV === 'production' && !MONGODB_URI) {
+    console.error('Set MONGODB_URI before starting the production server so orders are stored persistently.');
+    process.exit(1);
+  }
   if (mongoClient) {
     try { await mongoClient.connect(); mongoDb = mongoClient.db(MONGODB_DB); await mongoDb.command({ ping: 1 }); console.log(`MongoDB connected (${MONGODB_DB})`); }
-    catch (error) { console.error(`MongoDB connection failed: ${error.message}`); }
+    catch (error) {
+      console.error(`MongoDB connection failed: ${error.message}`);
+      if (process.env.NODE_ENV === 'production') process.exit(1);
+    }
   } else console.warn('MongoDB is not configured. Orders will use local SQLite until MONGODB_URI is set in .env.');
   server.listen(PORT, '0.0.0.0', () => console.log(`My Shop VIP running at http://localhost:${PORT}`));
 }
